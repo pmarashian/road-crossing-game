@@ -1,8 +1,8 @@
 {
-  "name": "phaser-es6-webpack",
-  "version": "2.0.0",
-  "description": "A bootstrap project for create games with Phaser + ES6 + Webpack.",
-  "author": "leandro cabrera <leandcabrera@gmail.com>",
+  "name": "road-crossing-game",
+  "version": "0.1.0",
+  "description": "Frogger-ish game from Zenva course.",
+  "author": "Phillip Marashian <phillip.marashian@gmail.com>",
   "main": "index.js",
   "scripts": {
     "start": "webpack",

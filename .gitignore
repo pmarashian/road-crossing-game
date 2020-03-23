@@ -3,3 +3,5 @@ dist/
 .vscode/
 *.log
 .idea
+assets/images/*
+.DS_Store
