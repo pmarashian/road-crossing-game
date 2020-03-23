@@ -1,6 +1,5 @@
-var path = require("path");
-var webpack = require("webpack");
-var BrowserSyncPlugin = require("browser-sync-webpack-plugin");
+const path = require("path");
+const webpack = require("webpack");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 
 module.exports = {
@@ -8,26 +7,19 @@ module.exports = {
     app: [path.resolve(__dirname, "src/index.js")],
     vendor: ["phaser"],
   },
-  mode: "development",
+  mode: "production",
   output: {
     pathinfo: true,
     path: path.resolve(__dirname, "dist"),
     publicPath: "./dist/",
     filename: "[name].bundle.js",
   },
-  watch: true,
+  watch: false,
   plugins: [
     new CleanWebpackPlugin(),
     new webpack.DefinePlugin({
       CANVAS_RENDERER: JSON.stringify(true),
       WEBGL_RENDERER: JSON.stringify(true),
-    }),
-    new BrowserSyncPlugin({
-      host: process.env.IP || "localhost",
-      port: process.env.PORT || 3000,
-      server: {
-        baseDir: ["./", "./build"],
-      },
     }),
   ],
   module: {
