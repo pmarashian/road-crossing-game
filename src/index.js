@@ -2,9 +2,11 @@ import Phaser from "phaser";
 
 import config from "./config";
 
+const STARTING_LIFE_COUNT = 3;
+
 const gameScene = new Phaser.Scene("Game");
 
-gameScene.init = function ({ score = 0 }) {
+gameScene.init = function ({ score = 0, lives = 3 }) {
   this.maxSpeed = 1.6;
   this.minSpeed = 0.5;
 
@@ -14,8 +16,10 @@ gameScene.init = function ({ score = 0 }) {
   this.playerSpeed = 4;
 
   this.playerScore = score;
+  this.playerLives = lives;
 
   this.isRestarting = false;
+  this.transitioning = true;
 };
 
 gameScene.preload = function () {
@@ -23,10 +27,18 @@ gameScene.preload = function () {
   this.load.image("player", "assets/images/player.png");
   this.load.image("enemy", "assets/images/dragon.png");
   this.load.image("goal", "assets/images/treasure.png");
+  this.load.image("heart", "assets/images/heart.png");
 };
 
 gameScene.create = function () {
-  this.cameras.main.fadeIn(1000, 0, 0, 0);
+  this.cameras.main.fadeIn(500, 0, 0, 0);
+  this.cameras.main.on(
+    "camerafadeincomplete",
+    function () {
+      this.transitioning = false;
+    },
+    this
+  );
 
   const gameHeight = this.sys.game.config.height;
   const gameWidth = this.sys.game.config.width;
@@ -52,6 +64,7 @@ gameScene.create = function () {
     },
   });
 
+  // Render Score
   this.scoreCount = new Phaser.GameObjects.Group(gameScene);
 
   for (let i = 0; i < this.playerScore; i++) {
@@ -62,6 +75,21 @@ gameScene.create = function () {
         40,
         "goal"
       ).setScale(0.5),
+      true
+    );
+  }
+
+  // Render Lives
+  this.lifeCount = new Phaser.GameObjects.Group(gameScene);
+
+  for (let i = 0; i < this.playerLives; i++) {
+    this.lifeCount.add(
+      new Phaser.GameObjects.Sprite(
+        gameScene,
+        600 - i * 50,
+        330,
+        "heart"
+      ).setScale(0.1),
       true
     );
   }
@@ -83,49 +111,45 @@ gameScene.restart = function (gotHit = false) {
   this.isRestarting = true;
 
   if (gotHit) {
-    return Promise.all([
-      this.shake.bind(this)(),
-      this.fadeOut.bind(this)(),
-    ]).then(this.restartScene.bind(this));
+    return Promise.all([this.shake(), this.fadeOut()]).then(
+      this.restartScene.bind(this)
+    );
   } else {
-    return this.fadeOut.bind(this)().then(this.restartScene.bind(this));
+    return this.fadeOut().then(this.restartScene.bind(this));
   }
 };
 
 gameScene.restartScene = function () {
+  let score = this.playerScore;
+  let lives = this.playerLives;
+
+  if (!lives) {
+    score = 0;
+    lives = STARTING_LIFE_COUNT;
+  }
+
   this.scene.restart({
-    score: this.playerScore,
+    score,
+    lives,
   });
 };
 
 gameScene.fadeOut = function () {
   return new Promise((resolve) => {
-    this.cameras.main.fade(500, 0, 0, 0);
-    this.cameras.main.on(
-      "camerafadeoutcomplete",
-      function () {
-        resolve();
-      },
-      this
-    );
+    this.cameras.main.fade(450, 0, 0, 0);
+    this.cameras.main.on("camerafadeoutcomplete", resolve);
   });
 };
 
 gameScene.shake = function () {
   return new Promise((resolve) => {
     this.cameras.main.shake(500);
-    this.cameras.main.on(
-      "camerashakecomplete",
-      function () {
-        resolve(this);
-      },
-      this
-    );
+    this.cameras.main.on("camerashakecomplete", resolve);
   });
 };
 
 gameScene.update = function () {
-  if (this.isRestarting) {
+  if (this.isRestarting || this.transitioning) {
     return;
   }
 
@@ -159,6 +183,7 @@ gameScene.update = function () {
     if (
       Phaser.Geom.Intersects.RectangleToRectangle(playerBox, enemy.getBounds())
     ) {
+      this.playerLives--;
       return this.restart(true);
     }
   }
