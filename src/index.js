@@ -14,6 +14,8 @@ gameScene.init = function () {
   this.playerSpeed = 4;
 
   this.playerScore = 0;
+
+  this.isRestarting = false;
 };
 
 gameScene.preload = function () {
@@ -24,6 +26,8 @@ gameScene.preload = function () {
 };
 
 gameScene.create = function () {
+  this.cameras.main.fadeIn(1000, 0, 0, 0);
+
   const gameHeight = this.sys.game.config.height;
   const gameWidth = this.sys.game.config.width;
 
@@ -59,23 +63,53 @@ gameScene.create = function () {
     },
     this
   );
-
-  this.cameras.main.fadeFrom(1000, 0, 0, 0);
 };
 
-gameScene.restart = function () {
-  console.log("BANG");
-  this.cameras.main.fade(1000, 0, 0, 0);
-  this.cameras.main.on(
-    "camerafadeoutcomplete",
-    function () {
-      this.scene.restart();
-    },
-    this
-  );
+gameScene.restart = function (gotHit = false) {
+  this.isRestarting = true;
+
+  if (gotHit) {
+    return this.shake(this).then(this.fadeOut).then(this.restartScene);
+  } else {
+    return this.fadeOut(this).then(this.restartScene);
+  }
+};
+
+gameScene.restartScene = function (game) {
+  game.scene.restart();
+};
+
+gameScene.fadeOut = function (game) {
+  return new Promise((resolve) => {
+    game.cameras.main.fade(500, 0, 0, 0);
+    game.cameras.main.on(
+      "camerafadeoutcomplete",
+      function () {
+        resolve(game);
+      },
+      game
+    );
+  });
+};
+
+gameScene.shake = function (game) {
+  return new Promise((resolve) => {
+    game.cameras.main.shake(500);
+    game.cameras.main.on(
+      "camerashakecomplete",
+      function () {
+        resolve(game);
+      },
+      game
+    );
+  });
 };
 
 gameScene.update = function () {
+  if (this.isRestarting) {
+    return;
+  }
+
   const enemies = this.enemies.getChildren();
   const num = enemies.length;
 
@@ -106,7 +140,7 @@ gameScene.update = function () {
     if (
       Phaser.Geom.Intersects.RectangleToRectangle(playerBox, enemy.getBounds())
     ) {
-      this.restart();
+      this.restart(true);
     }
   }
 };
