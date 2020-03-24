@@ -4,7 +4,7 @@ import config from "./config";
 
 const gameScene = new Phaser.Scene("Game");
 
-gameScene.init = function () {
+gameScene.init = function ({ score = 0 }) {
   this.maxSpeed = 1.6;
   this.minSpeed = 0.5;
 
@@ -13,7 +13,7 @@ gameScene.init = function () {
 
   this.playerSpeed = 4;
 
-  this.playerScore = 0;
+  this.playerScore = score;
 
   this.isRestarting = false;
 };
@@ -69,38 +69,43 @@ gameScene.restart = function (gotHit = false) {
   this.isRestarting = true;
 
   if (gotHit) {
-    return this.shake(this).then(this.fadeOut).then(this.restartScene);
+    return this.shake
+      .bind(this)()
+      .then(this.fadeOut.bind(this))
+      .then(this.restartScene.bind(this));
   } else {
-    return this.fadeOut(this).then(this.restartScene);
+    return this.fadeOut.bind(this)().then(this.restartScene.bind(this));
   }
 };
 
-gameScene.restartScene = function (game) {
-  game.scene.restart();
+gameScene.restartScene = function () {
+  this.scene.restart({
+    score: this.playerScore,
+  });
 };
 
-gameScene.fadeOut = function (game) {
+gameScene.fadeOut = function () {
   return new Promise((resolve) => {
-    game.cameras.main.fade(500, 0, 0, 0);
-    game.cameras.main.on(
+    this.cameras.main.fade(500, 0, 0, 0);
+    this.cameras.main.on(
       "camerafadeoutcomplete",
       function () {
-        resolve(game);
+        resolve();
       },
-      game
+      this
     );
   });
 };
 
-gameScene.shake = function (game) {
+gameScene.shake = function () {
   return new Promise((resolve) => {
-    game.cameras.main.shake(500);
-    game.cameras.main.on(
+    this.cameras.main.shake(500);
+    this.cameras.main.on(
       "camerashakecomplete",
       function () {
-        resolve(game);
+        resolve(this);
       },
-      game
+      this
     );
   });
 };
