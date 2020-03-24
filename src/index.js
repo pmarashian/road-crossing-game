@@ -52,6 +52,20 @@ gameScene.create = function () {
     },
   });
 
+  this.scoreCount = new Phaser.GameObjects.Group(gameScene);
+
+  for (let i = 0; i < this.playerScore; i++) {
+    this.scoreCount.add(
+      new Phaser.GameObjects.Sprite(
+        gameScene,
+        600 - i * 50,
+        40,
+        "goal"
+      ).setScale(0.5),
+      true
+    );
+  }
+
   Phaser.Actions.Call(
     this.enemies.getChildren(),
     function (enemy) {
@@ -69,10 +83,10 @@ gameScene.restart = function (gotHit = false) {
   this.isRestarting = true;
 
   if (gotHit) {
-    return this.shake
-      .bind(this)()
-      .then(this.fadeOut.bind(this))
-      .then(this.restartScene.bind(this));
+    return Promise.all([
+      this.shake.bind(this)(),
+      this.fadeOut.bind(this)(),
+    ]).then(this.restartScene.bind(this));
   } else {
     return this.fadeOut.bind(this)().then(this.restartScene.bind(this));
   }
@@ -127,7 +141,7 @@ gameScene.update = function () {
 
   if (Phaser.Geom.Intersects.RectangleToRectangle(playerBox, goalBox)) {
     this.playerScore++;
-    this.restart();
+    return this.restart();
   }
 
   for (let i = 0; i < num; i++) {
@@ -145,7 +159,7 @@ gameScene.update = function () {
     if (
       Phaser.Geom.Intersects.RectangleToRectangle(playerBox, enemy.getBounds())
     ) {
-      this.restart(true);
+      return this.restart(true);
     }
   }
 };
