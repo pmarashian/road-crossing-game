@@ -10,5 +10,10 @@
   },
   "globals": {
     "__DEV__": true
+  },
+  "rules": {
+    "quotes": "off",
+    "semi": "off",
+    "comma-dangle": "off"
   }
 }
